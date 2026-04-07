@@ -7,30 +7,82 @@ import pandas as pd
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 import io
+from urllib.parse import urlencode
 
 app = Flask(__name__)
 
+
+def normalizar_venda(venda):
+    venda_normalizada = dict(venda)
+    data_venda = venda_normalizada.get('data_venda')
+
+    if hasattr(data_venda, 'strftime'):
+        venda_normalizada['data_venda'] = data_venda.strftime('%Y-%m-%d %H:%M:%S')
+    elif data_venda is None:
+        venda_normalizada['data_venda'] = ''
+    else:
+        venda_normalizada['data_venda'] = str(data_venda)
+
+    for campo in ('total_bruto', 'desconto', 'total_liquido'):
+        valor = venda_normalizada.get(campo)
+        venda_normalizada[campo] = float(valor) if valor is not None else 0.0
+
+    return venda_normalizada
+
+
+def obter_filtros_relatorio_vendas():
+    return {
+        'data_ini': request.args.get('data_ini', '').strip(),
+        'data_fim': request.args.get('data_fim', '').strip(),
+        'status': request.args.get('status', '').strip(),
+        'cliente_id': request.args.get('cliente_id', '').strip(),
+        'usuario_id': request.args.get('usuario_id', '').strip(),
+        'produto_id': request.args.get('produto_id', '').strip(),
+    }
+
+
+def listar_vendas_filtradas(filtros):
+    vendas = [normalizar_venda(venda) for venda in listar_vendas()]
+
+    if filtros['data_ini']:
+        vendas = [venda for venda in vendas if venda.get('data_venda') and venda['data_venda'][:10] >= filtros['data_ini']]
+    if filtros['data_fim']:
+        vendas = [venda for venda in vendas if venda.get('data_venda') and venda['data_venda'][:10] <= filtros['data_fim']]
+    if filtros['status']:
+        vendas = [venda for venda in vendas if venda.get('status') == filtros['status']]
+    if filtros['cliente_id']:
+        vendas = [venda for venda in vendas if str(venda.get('cliente_id')) == filtros['cliente_id']]
+    if filtros['usuario_id']:
+        vendas = [venda for venda in vendas if str(venda.get('usuario_id')) == filtros['usuario_id']]
+    if filtros['produto_id']:
+        produto_id = filtros['produto_id']
+        vendas = [
+            venda for venda in vendas
+            if any(str(item.get('produto_id')) == produto_id for item in get_itens_venda(venda['id']))
+        ]
+
+    return vendas
+
+
+def montar_contexto_relatorio_vendas():
+    filtros = obter_filtros_relatorio_vendas()
+    contexto = {
+        'clientes': listar_clientes(),
+        'usuarios': listar_usuarios(),
+        'produtos': listar_produtos(),
+        'vendas': listar_vendas_filtradas(filtros),
+        'query_string': urlencode({chave: valor for chave, valor in filtros.items() if valor}),
+    }
+    contexto.update(filtros)
+    return contexto
+
 @app.route('/relatorio/vendas/export/pdf')
 def relatorio_vendas_export_pdf():
-    data_ini = request.args.get('data_ini')
-    data_fim = request.args.get('data_fim')
-    status = request.args.get('status')
-    cliente_id = request.args.get('cliente_id')
-    clientes = listar_clientes()
-    vendas = listar_vendas()
-    # Filtros iguais ao Excel
-    if data_ini:
-        vendas = [v for v in vendas if v.get('data_venda') and v['data_venda'] >= data_ini]
-    if data_fim:
-        vendas = [v for v in vendas if v.get('data_venda') and v['data_venda'] <= data_fim]
-    if status:
-        vendas = [v for v in vendas if v.get('status') == status]
-    if cliente_id:
-        vendas = [v for v in vendas if str(v.get('cliente_id')) == str(cliente_id)]
+    vendas = montar_contexto_relatorio_vendas()['vendas']
 
     buffer = io.BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
+    height = A4[1]
     p.setFont("Helvetica-Bold", 16)
     p.drawString(50, height - 50, "Relatório de Vendas")
     p.setFont("Helvetica", 10)
@@ -57,19 +109,7 @@ def relatorio_vendas_export_pdf():
 
 @app.route('/relatorio/vendas/export/excel')
 def relatorio_vendas_export_excel():
-    data_ini = request.args.get('data_ini')
-    data_fim = request.args.get('data_fim')
-    status = request.args.get('status')
-    cliente_id = request.args.get('cliente_id')
-    vendas = listar_vendas()
-    if data_ini:
-        vendas = [v for v in vendas if v.get('data_venda') and v['data_venda'] >= data_ini]
-    if data_fim:
-        vendas = [v for v in vendas if v.get('data_venda') and v['data_venda'] <= data_fim]
-    if status:
-        vendas = [v for v in vendas if v.get('status') == status]
-    if cliente_id:
-        vendas = [v for v in vendas if str(v.get('cliente_id')) == str(cliente_id)]
+    vendas = montar_contexto_relatorio_vendas()['vendas']
     df = pd.DataFrame(vendas)
     output = io.BytesIO()
     df.to_excel(output, index=False)
@@ -78,22 +118,7 @@ def relatorio_vendas_export_excel():
 
 @app.route('/relatorio/vendas')
 def relatorio_vendas():
-    data_ini = request.args.get('data_ini')
-    data_fim = request.args.get('data_fim')
-    status = request.args.get('status')
-    cliente_id = request.args.get('cliente_id')
-    clientes = listar_clientes()
-    vendas = listar_vendas()
-    # Filtros básicos
-    if data_ini:
-        vendas = [v for v in vendas if v.get('data_venda') and v['data_venda'] >= data_ini]
-    if data_fim:
-        vendas = [v for v in vendas if v.get('data_venda') and v['data_venda'] <= data_fim]
-    if status:
-        vendas = [v for v in vendas if v.get('status') == status]
-    if cliente_id:
-        vendas = [v for v in vendas if str(v.get('cliente_id')) == str(cliente_id)]
-    return render_template('relatorio_vendas.html', vendas=vendas, clientes=clientes, data_ini=data_ini, data_fim=data_fim, status=status, cliente_id=cliente_id)
+    return render_template('relatorio_vendas.html', **montar_contexto_relatorio_vendas())
 
 @app.route('/vendas/editar/<int:id>', methods=['GET', 'POST'])
 def vendas_editar(id):

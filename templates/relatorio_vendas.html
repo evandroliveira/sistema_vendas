@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Relatório de Vendas</title>
+    <title>Relatorio de Vendas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -17,123 +17,148 @@
                     <li class="nav-item"><a class="nav-link" href="/produtos">Produtos</a></li>
                     <li class="nav-item"><a class="nav-link" href="/vendas">Vendas</a></li>
                     <li class="nav-item"><a class="nav-link" href="/vendas/cadastrar">Cadastrar Venda</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/relatorio/vendas">Relatório de Vendas</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/relatorio/vendas">Relatorio de Vendas</a></li>
                     <li class="nav-item"><a class="nav-link" href="/controle-estoque">Controle de Estoque</a></li>
                 </ul>
             </div>
         </div>
     </nav>
     <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>Relatório de Vendas</h2>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+            <h2 class="mb-0">Relatorio de Vendas</h2>
             <div>
-                <a href="/relatorio/vendas/export/pdf?{{ request.query_string|safe }}" class="btn btn-outline-danger me-2">Exportar PDF</a>
-                <a href="/relatorio/vendas/export/excel?{{ request.query_string|safe }}" class="btn btn-outline-success">Exportar Excel</a>
+                <a href="/relatorio/vendas/export/pdf{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-outline-danger me-2">Exportar PDF</a>
+                <a href="/relatorio/vendas/export/excel{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-outline-success">Exportar Excel</a>
             </div>
         </div>
-        <form method="get" class="mb-3">
-            <div class="row">
-                <div class="col-md-2">
-                    <label>Data Inicial</label>
-                    <input type="date" class="form-control" name="data_ini" value="{{ data_ini }}">
-                </div>
-                <div class="col-md-2">
-                    <label>Data Final</label>
-                    <input type="date" class="form-control" name="data_fim" value="{{ data_fim }}">
-                </div>
-                <div class="col-md-2">
-                    <label>Status</label>
-                    <select class="form-control" name="status">
-                        <option value="">Todos</option>
-                        <option value="FINALIZADA" {% if status=='FINALIZADA' %}selected{% endif %}>FINALIZADA</option>
-                        <option value="CANCELADA" {% if status=='CANCELADA' %}selected{% endif %}>CANCELADA</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label>Cliente</label>
-                    <select class="form-control" name="cliente_id">
-                        <option value="">Todos</option>
-                        {% for c in clientes %}
-                        <option value="{{ c.id }}" {% if cliente_id==c.id %}selected{% endif %}>{{ c.nome }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label>Usuário</label>
-                    <select class="form-control" name="usuario_id">
-                        <option value="">Todos</option>
-                        {% for u in usuarios %}
-                        <option value="{{ u.id }}" {% if usuario_id==u.id %}selected{% endif %}>{{ u.nome }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label>Produto</label>
-                    <select class="form-control" name="produto_id">
-                        <option value="">Todos</option>
-                        {% for p in produtos %}
-                        <option value="{{ p.id }}" {% if produto_id==p.id %}selected{% endif %}>{{ p.nome }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+
+        <form method="get" class="row g-3 align-items-end mb-4">
+            <div class="col-md-2">
+                <label for="data_ini" class="form-label">Data Inicial</label>
+                <input type="date" class="form-control" id="data_ini" name="data_ini" value="{{ data_ini }}">
             </div>
-            <button type="submit" class="btn btn-primary mt-3">Filtrar</button>
-                <div class="card mt-4 mb-4 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Vendas por Dia</h5>
-                        <canvas id="graficoVendasDia" height="80"></canvas>
-                    </div>
-                </div>
+            <div class="col-md-2">
+                <label for="data_fim" class="form-label">Data Final</label>
+                <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+            </div>
+            <div class="col-md-2">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-control" id="status" name="status">
+                    <option value="">Todos</option>
+                    <option value="FINALIZADA" {% if status == 'FINALIZADA' %}selected{% endif %}>FINALIZADA</option>
+                    <option value="CANCELADA" {% if status == 'CANCELADA' %}selected{% endif %}>CANCELADA</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="cliente_id" class="form-label">Cliente</label>
+                <select class="form-control" id="cliente_id" name="cliente_id">
+                    <option value="">Todos</option>
+                    {% for c in clientes %}
+                    <option value="{{ c.id }}" {% if cliente_id|string == c.id|string %}selected{% endif %}>{{ c.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="usuario_id" class="form-label">Usuario</label>
+                <select class="form-control" id="usuario_id" name="usuario_id">
+                    <option value="">Todos</option>
+                    {% for u in usuarios %}
+                    <option value="{{ u.id }}" {% if usuario_id|string == u.id|string %}selected{% endif %}>{{ u.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="produto_id" class="form-label">Produto</label>
+                <select class="form-control" id="produto_id" name="produto_id">
+                    <option value="">Todos</option>
+                    {% for p in produtos %}
+                    <option value="{{ p.id }}" {% if produto_id|string == p.id|string %}selected{% endif %}>{{ p.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a href="/relatorio/vendas" class="btn btn-outline-secondary">Limpar filtros</a>
+            </div>
         </form>
-        <table class="table table-striped table-hover">
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Vendas por Dia</h5>
+                <canvas id="graficoVendasDia" height="80"></canvas>
+            </div>
+        </div>
+
+        <table class="table table-striped table-hover align-middle">
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Data</th>
                     <th>Cliente</th>
-                    <th>Total Líquido</th>
+                    <th>Usuario</th>
+                    <th>Total Liquido</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
                 {% for v in vendas %}
-                <tr{% if v.status == 'CANCELADA' %} style="background-color:#f8d7da"{% elif v.status == 'FINALIZADA' %} style="background-color:#d1e7dd"{% endif %}>
+                <tr{% if v.status == 'CANCELADA' %} class="table-danger"{% elif v.status == 'FINALIZADA' %} class="table-success"{% endif %}>
                     <td>{{ v.id }}</td>
                     <td>{{ v.data_venda }}</td>
-                    <td>{{ v.cliente_id }}</td>
-                    <td>{{ v.total_liquido }}</td>
+                    <td>{{ v.cliente_nome }}</td>
+                    <td>{{ v.usuario_nome }}</td>
+                    <td>R$ {{ '%.2f'|format(v.total_liquido or 0) }}</td>
                     <td>{{ v.status }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">Nenhuma venda encontrada para os filtros informados.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-            <script>
-            // Dados para o gráfico
-            let vendasGrafico = {{ vendas|tojson }};
-            const vendasPorDia = {};
-            vendasGrafico.forEach(v => {
-                const dia = v.data_venda ? v.data_venda.split(' ')[0] : 'Sem data';
-                vendasPorDia[dia] = (vendasPorDia[dia] || 0) + parseFloat(v.total_liquido);
-            });
-            const labels = Object.keys(vendasPorDia);
-            const data = Object.values(vendasPorDia);
-            const ctx = document.getElementById('graficoVendasDia').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Total Vendido (R$)',
-                        data: data,
-                        backgroundColor: '#0d6efd',
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { display: false },
-                        title: { display: true, text: 'Vendas por Dia' }
     </div>
+
+    <script>
+    const vendasGrafico = {{ vendas|tojson }};
+    const vendasPorDia = {};
+
+    vendasGrafico.forEach(function(venda) {
+        const dia = venda.data_venda ? venda.data_venda.split(' ')[0] : 'Sem data';
+        const totalLiquido = Number(venda.total_liquido || 0);
+        vendasPorDia[dia] = (vendasPorDia[dia] || 0) + totalLiquido;
+    });
+
+    const labels = Object.keys(vendasPorDia);
+    const valores = Object.values(vendasPorDia);
+    const canvas = document.getElementById('graficoVendasDia');
+
+    if (canvas) {
+        new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Vendido (R$)',
+                    data: valores,
+                    backgroundColor: '#0d6efd',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Vendas por Dia'
+                    }
+                }
+            }
+        });
+    }
+    </script>
 </body>
 </html>

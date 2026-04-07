@@ -126,27 +126,12 @@ def cadastrar_produto(nome, codigo_barras, categoria_id, preco_custo, preco_vend
     db.execute(sql, (nome, codigo_barras, categoria_id, preco_custo, preco_venda, estoque_atual, estoque_minimo, ativo))
     db.close()
 
-
-    db = Database()
-    cliente = db.query('SELECT * FROM cliente WHERE id=%s', (id,))
-    db.close()
-    return cliente[0] if cliente else None
-
 # Funções para categorias
-    db = Database()
-    sql = 'UPDATE cliente SET nome=%s, cpf_cnpj=%s, telefone=%s, email=%s WHERE id=%s'
-    db.execute(sql, (nome, cpf_cnpj, telefone, email, id))
-    db.close()
-
 def listar_categorias():
-     db = Database()
-     sql = 'DELETE FROM cliente WHERE id=%s'
-     db.execute(sql, (id,))
-     db.close()
-     db = Database()
-     categorias = db.query('SELECT * FROM categoria')
-     db.close()
-     return categorias
+    db = Database()
+    categorias = db.query('SELECT * FROM categoria')
+    db.close()
+    return categorias
 
 def cadastrar_categoria(nome, ativo=1):
     db = Database()
