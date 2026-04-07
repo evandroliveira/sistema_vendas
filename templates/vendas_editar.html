@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Editar Venda - Sistema de Vendas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Sistema de Vendas</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="/clientes">Clientes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/produtos">Produtos</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/vendas">Vendas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/controle-estoque">Controle de Estoque</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <h2>Editar Venda</h2>
+        {% if erro %}
+        <div class="alert alert-danger" role="alert">
+            {{ erro }}
+        </div>
+        {% endif %}
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Itens da venda</h5>
+                {% if itens_venda %}
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Quantidade</th>
+                                <th>Preco unitario</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in itens_venda %}
+                            <tr>
+                                <td>{{ item.produto_nome }}</td>
+                                <td>{{ item.quantidade }}</td>
+                                <td>R$ {{ '%.2f'|format(item.preco_unitario or 0) }}</td>
+                                <td>R$ {{ '%.2f'|format((item.quantidade or 0) * (item.preco_unitario or 0)) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Nenhum item vinculado a esta venda.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="post">
+            <div class="mb-3">
+                <label for="cliente_id" class="form-label">Cliente</label>
+                <select class="form-control" id="cliente_id" name="cliente_id" required>
+                    {% for c in clientes %}
+                    <option value="{{ c.id }}" {% if c.id == venda.cliente_id %}selected{% endif %}>{{ c.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="usuario_id" class="form-label">Usuário</label>
+                <select class="form-control" id="usuario_id" name="usuario_id" required>
+                    {% for u in usuarios %}
+                    <option value="{{ u.id }}" {% if u.id == venda.usuario_id %}selected{% endif %}>{{ u.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="caixa_id" class="form-label">Caixa</label>
+                <select class="form-control" id="caixa_id" name="caixa_id" required>
+                    {% for cx in caixas %}
+                    <option value="{{ cx.id }}" {% if cx.id == venda.caixa_id %}selected{% endif %}>Caixa {{ cx.id }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="total_bruto" class="form-label">Total Bruto</label>
+                <input type="number" step="0.01" class="form-control" id="total_bruto" name="total_bruto" value="{{ venda.total_bruto }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="desconto" class="form-label">Desconto</label>
+                <input type="number" step="0.01" class="form-control" id="desconto" name="desconto" value="{{ venda.desconto }}">
+            </div>
+            <div class="mb-3">
+                <label for="total_liquido" class="form-label">Total Líquido</label>
+                <input type="number" step="0.01" class="form-control" id="total_liquido" name="total_liquido" value="{{ venda.total_liquido }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-control" id="status" name="status">
+                    <option value="FINALIZADA" {% if venda.status == 'FINALIZADA' %}selected{% endif %}>FINALIZADA</option>
+                    <option value="CANCELADA" {% if venda.status == 'CANCELADA' %}selected{% endif %}>CANCELADA</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success">Salvar</button>
+            <a href="/vendas" class="btn btn-secondary">Voltar</a>
+        </form>
+    </div>
+</body>
+</html>

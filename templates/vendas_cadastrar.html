@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cadastrar Venda - Sistema de Vendas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Sistema de Vendas</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="/clientes">Clientes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/produtos">Produtos</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/vendas">Vendas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/vendas/cadastrar">Cadastrar Venda</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/relatorio/vendas">Relatório de Vendas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/controle-estoque">Controle de Estoque</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <h2>Cadastrar Venda</h2>
+        {% if erro %}
+        <div class="alert alert-danger" role="alert">
+            {{ erro }}
+        </div>
+        {% endif %}
+        <form method="post">
+            <div class="mb-3">
+                <label for="cliente_id" class="form-label">Cliente</label>
+                <select class="form-control" id="cliente_id" name="cliente_id" required>
+                    {% for c in clientes %}
+                    <option value="{{ c.id }}">{{ c.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="usuario_id" class="form-label">Usuário</label>
+                <select class="form-control" id="usuario_id" name="usuario_id" required>
+                    {% for u in usuarios %}
+                    <option value="{{ u.id }}">{{ u.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="caixa_id" class="form-label">Caixa</label>
+                <select class="form-control" id="caixa_id" name="caixa_id" required>
+                    {% for cx in caixas %}
+                    <option value="{{ cx.id }}">Caixa {{ cx.id }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="produtos" class="form-label">Produtos</label>
+                <div>
+                    {% for p in produtos %}
+                    <div class="form-check d-flex align-items-center mb-2">
+                        <input class="form-check-input produto-checkbox" type="checkbox" data-preco="{{ p.preco_venda }}" name="produtos" value="{{ p.id }}" id="produto_{{ p.id }}" {% if (p.estoque_atual or 0) <= 0 %}disabled{% endif %}>
+                        <label class="form-check-label ms-2" for="produto_{{ p.id }}">
+                            {{ p.nome }} (Estoque: {{ p.estoque_atual }}) - Preço: R$ {{ p.preco_venda }}
+                        </label>
+                        <input type="number" class="form-control ms-2 quantidade-input" name="quantidade_{{ p.id }}" min="1" max="{{ p.estoque_atual }}" placeholder="Qtd" style="width:80px;" data-produto-id="{{ p.id }}" disabled>
+                    </div>
+                    {% endfor %}
+                </div>
+                <script>
+                function sincronizarQuantidade(checkbox) {
+                    let produtoId = checkbox.value;
+                    let quantidadeInput = document.querySelector('.quantidade-input[data-produto-id="' + produtoId + '"]');
+                    if (!quantidadeInput) {
+                        return;
+                    }
+
+                    quantidadeInput.disabled = !checkbox.checked;
+                    if (!checkbox.checked) {
+                        quantidadeInput.value = '';
+                    }
+                }
+
+                function calcularTotais() {
+                    let totalBruto = 0;
+                    document.querySelectorAll('.produto-checkbox').forEach(function(checkbox) {
+                        if (checkbox.checked) {
+                            let produtoId = checkbox.value;
+                            let preco = parseFloat(checkbox.getAttribute('data-preco')) || 0;
+                            let quantidadeInput = document.querySelector('.quantidade-input[data-produto-id="' + produtoId + '"]');
+                            let quantidade = parseInt(quantidadeInput.value) || 0;
+                            if (quantidade > 0) {
+                                totalBruto += preco * quantidade;
+                            }
+                        }
+                    });
+                    document.getElementById('total_bruto').value = totalBruto.toFixed(2);
+                    let desconto = parseFloat(document.getElementById('desconto').value) || 0;
+                    let totalLiquido = totalBruto - desconto;
+                    document.getElementById('total_liquido').value = totalLiquido.toFixed(2);
+                }
+
+                document.querySelectorAll('.produto-checkbox').forEach(function(checkbox) {
+                    sincronizarQuantidade(checkbox);
+                    checkbox.addEventListener('change', function() {
+                        sincronizarQuantidade(checkbox);
+                        calcularTotais();
+                    });
+                });
+
+                document.querySelectorAll('.quantidade-input').forEach(function(el) {
+                    el.addEventListener('change', calcularTotais);
+                    el.addEventListener('input', calcularTotais);
+                });
+                document.getElementById('desconto').addEventListener('input', calcularTotais);
+                </script>
+            </div>
+            <div class="mb-3">
+                <label for="total_bruto" class="form-label">Total Bruto</label>
+                <input type="number" step="0.01" class="form-control" id="total_bruto" name="total_bruto" required>
+            </div>
+            <div class="mb-3">
+                <label for="desconto" class="form-label">Desconto</label>
+                <input type="number" step="0.01" class="form-control" id="desconto" name="desconto" value="0">
+            </div>
+            <div class="mb-3">
+                <label for="total_liquido" class="form-label">Total Líquido</label>
+                <input type="number" step="0.01" class="form-control" id="total_liquido" name="total_liquido" required>
+            </div>
+            <div class="mb-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-control" id="status" name="status">
+                    <option value="FINALIZADA">FINALIZADA</option>
+                    <option value="CANCELADA">CANCELADA</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success">Salvar</button>
+            <a href="/vendas" class="btn btn-secondary">Voltar</a>
+        </form>
+    </div>
+</body>
+</html>

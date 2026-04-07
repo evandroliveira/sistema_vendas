@@ -14,6 +14,10 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="/clientes">Clientes</a></li>
                     <li class="nav-item"><a class="nav-link active" href="/produtos">Produtos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/vendas">Vendas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/vendas/cadastrar">Cadastrar Venda</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/relatorio/vendas">Relatório de Vendas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/controle-estoque">Controle de Estoque</a></li>
                 </ul>
             </div>
         </div>
@@ -37,6 +41,10 @@
                     <td>{{ p.nome }}</td>
                     <td>{{ p.preco_venda }}</td>
                     <td>{{ p.estoque_atual }}</td>
+                        <td>
+                            <a href="/produtos/editar/{{ p.id }}" class="btn btn-sm btn-warning">Editar</a>
+                            <a href="/produtos/excluir/{{ p.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Deseja realmente excluir este produto?');">Excluir</a>
+                        </td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -2,8 +2,10 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sistema de Vendas</title>
+    <link rel="icon" href="https://www.flaticon.com/br/icone-gratis/pesquisa_1055685">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
@@ -14,6 +16,10 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="/clientes">Clientes</a></li>
                     <li class="nav-item"><a class="nav-link" href="/produtos">Produtos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/vendas">Vendas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/vendas/cadastrar">Cadastrar Venda</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/relatorio/vendas">Relatório de Vendas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/controle-estoque">Controle de Estoque</a></li>
                 </ul>
             </div>
         </div>
@@ -21,11 +27,43 @@
     <div class="container mt-4">
         <h1>Bem-vindo ao Sistema de Vendas</h1>
         <p>Escolha uma opção no menu acima.</p>
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card text-bg-primary mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Total de Clientes</h5>
+                        <p class="card-text display-6">{{ total_clientes }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-bg-success mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Total de Vendas</h5>
+                        <p class="card-text display-6">{{ total_vendas }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-bg-warning mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Valor Total de Vendas</h5>
+                        <p class="card-text display-6">R$ {{ valor_total_vendas|round(2) }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-bg-info mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Média de Vendas</h5>
+                        <p class="card-text display-6">R$ {{ media_vendas|round(2) }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="mt-4">
             <img src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800&h=400&fit=crop" class="img-fluid" alt="Sistema de Vendas">
-        
         </div>
-
     </div>
 </body>
 </html>

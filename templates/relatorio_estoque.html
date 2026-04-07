@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Controle de Estoque</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .estoque-baixo {
+            background-color: #f8d7da;
+        }
+
+        .estoque-normal {
+            background-color: #d1e7dd;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Sistema de Vendas</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="/clientes">Clientes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/produtos">Produtos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/vendas">Vendas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/vendas/cadastrar">Cadastrar Venda</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/relatorio/vendas">Relatório de Vendas</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/controle-estoque">Controle de Estoque</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+            <div>
+                <h2 class="mb-1">Controle de Estoque</h2>
+                <p class="text-muted mb-0">Produtos em vermelho estao abaixo do estoque minimo. Produtos em verde estao com estoque normal.</p>
+            </div>
+            <div class="d-flex gap-3 flex-wrap">
+                <div class="card border-danger-subtle bg-danger-subtle">
+                    <div class="card-body py-2 px-3">
+                        <div class="small text-danger-emphasis">Abaixo do estoque</div>
+                        <div class="fs-4 fw-semibold">{{ total_abaixo }}</div>
+                    </div>
+                </div>
+                <div class="card border-success-subtle bg-success-subtle">
+                    <div class="card-body py-2 px-3">
+                        <div class="small text-success-emphasis">Estoque normal</div>
+                        <div class="fs-4 fw-semibold">{{ total_normal }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Preco</th>
+                    <th>Estoque</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in produtos %}
+                <tr class="{% if p.estoque_baixo %}estoque-baixo{% else %}estoque-normal{% endif %}">
+                    <td>{{ p.nome }}</td>
+                    <td>R$ {{ '%.2f'|format(p.preco_venda or 0) }}</td>
+                    <td>
+                        <div class="fw-semibold">{{ p.estoque_atual }}</div>
+                        <div class="small text-body-secondary">Minimo: {{ p.estoque_minimo }}</div>
+                        <span class="badge {% if p.estoque_baixo %}text-bg-danger{% else %}text-bg-success{% endif %}">
+                            {% if p.estoque_baixo %}Abaixo do estoque{% else %}Estoque normal{% endif %}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
