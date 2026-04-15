@@ -47,109 +47,130 @@ class Database:
         self.cursor.execute(sql, params or ())
         return self.cursor.fetchall()
 
-    def execute(self, sql, params=None):
+    def query_one(self, sql, params=None):
         self.cursor.execute(sql, params or ())
-        self.conn.commit()
-        return self.cursor.rowcount
+        return self.cursor.fetchone()
+
+    def execute(self, sql, params=None):
+        try:
+            self.cursor.execute(sql, params or ())
+            self.conn.commit()
+            return self.cursor.rowcount
+        except Exception:
+            self.conn.rollback()
+            raise
+
+    def insert(self, sql, params=None):
+        try:
+            self.cursor.execute(sql, params or ())
+            self.conn.commit()
+            return self.cursor.lastrowid
+        except Exception:
+            self.conn.rollback()
+            raise
 
     def close(self):
-        self.cursor.close()
-        self.conn.close()
+        if self.cursor:
+            self.cursor.close()
+        if self.conn and self.conn.is_connected():
+            self.conn.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
 
 # Funções de exemplo
 # Buscar cliente por ID
 def get_cliente(cliente_id):
-    db = Database()
-    cliente = db.query('SELECT * FROM cliente WHERE id=%s', (cliente_id,))
-    db.close()
-    return cliente[0] if cliente else None
+    with Database() as db:
+        return db.query_one('SELECT * FROM cliente WHERE id=%s', (cliente_id,))
 
 def listar_clientes():
-    db = Database()
-    clientes = db.query('SELECT * FROM cliente')
-    db.close()
-    return clientes
+    with Database() as db:
+        return db.query('SELECT * FROM cliente ORDER BY nome')
 
 
 def cadastrar_cliente(nome, cpf_cnpj, telefone, email):
-    db = Database()
-    sql = 'INSERT INTO cliente (nome, cpf_cnpj, telefone, email) VALUES (%s, %s, %s, %s)'
-    db.execute(sql, (nome, cpf_cnpj, telefone, email))
-    db.close()
+    with Database() as db:
+        sql = 'INSERT INTO cliente (nome, cpf_cnpj, telefone, email) VALUES (%s, %s, %s, %s)'
+        db.execute(sql, (nome, cpf_cnpj, telefone, email))
 
 # Função para editar cliente
 def editar_cliente(id, nome, cpf_cnpj, telefone, email):
-    db = Database()
-    sql = 'UPDATE cliente SET nome=%s, cpf_cnpj=%s, telefone=%s, email=%s WHERE id=%s'
-    db.execute(sql, (nome, cpf_cnpj, telefone, email, id))
-    db.close()
+    with Database() as db:
+        sql = 'UPDATE cliente SET nome=%s, cpf_cnpj=%s, telefone=%s, email=%s WHERE id=%s'
+        db.execute(sql, (nome, cpf_cnpj, telefone, email, id))
 
 # Função para excluir cliente
 def excluir_cliente(id):
-    db = Database()
-    sql = 'DELETE FROM cliente WHERE id=%s'
-    db.execute(sql, (id,))
-    db.close()
+    with Database() as db:
+        sql = 'DELETE FROM cliente WHERE id=%s'
+        db.execute(sql, (id,))
 
 # Funções para produtos
 # Função para buscar produto por ID
 def get_produto(id):
-    db = Database()
-    produto = db.query('SELECT * FROM produto WHERE id=%s', (id,))
-    db.close()
-    return produto[0] if produto else None
+    with Database() as db:
+        return db.query_one(
+            '''
+            SELECT p.*, c.nome AS categoria_nome
+            FROM produto p
+            LEFT JOIN categoria c ON c.id = p.categoria_id
+            WHERE p.id=%s
+            ''',
+            (id,)
+        )
 
 def listar_produtos():
-    db = Database()
-    produtos = db.query('SELECT * FROM produto')
-    db.close()
-    return produtos
+    with Database() as db:
+        return db.query(
+            '''
+            SELECT p.*, c.nome AS categoria_nome
+            FROM produto p
+            LEFT JOIN categoria c ON c.id = p.categoria_id
+            ORDER BY p.nome
+            '''
+        )
 
 # Função para editar produto
-def editar_produto(id, nome, codigo_barras, categoria_id, preco_custo, preco_venda, estoque_atual, estoque_minimo):
-    db = Database()
-    sql = '''UPDATE produto SET nome=%s, codigo_barras=%s, categoria_id=%s, preco_custo=%s, preco_venda=%s, estoque_atual=%s, estoque_minimo=%s WHERE id=%s'''
-    db.execute(sql, (nome, codigo_barras, categoria_id, preco_custo, preco_venda, estoque_atual, estoque_minimo, id))
-    db.close()
+def editar_produto(id, nome, codigo_barras, categoria_id, preco_custo, preco_venda, estoque_atual, estoque_minimo, imagem=None):
+    with Database() as db:
+        sql = '''UPDATE produto SET nome=%s, codigo_barras=%s, categoria_id=%s, preco_custo=%s, preco_venda=%s, estoque_atual=%s, estoque_minimo=%s, imagem=%s WHERE id=%s'''
+        db.execute(sql, (nome, codigo_barras, categoria_id, preco_custo, preco_venda, estoque_atual, estoque_minimo, imagem, id))
 
 # Função para excluir produto
 def excluir_produto(id):
-    db = Database()
-    sql = 'DELETE FROM produto WHERE id=%s'
-    db.execute(sql, (id,))
-    db.close()
+    with Database() as db:
+        sql = 'DELETE FROM produto WHERE id=%s'
+        db.execute(sql, (id,))
 
-def cadastrar_produto(nome, codigo_barras, categoria_id, preco_custo, preco_venda, estoque_atual, estoque_minimo, ativo=1):
-    db = Database()
-    sql = '''INSERT INTO produto (nome, codigo_barras, categoria_id, preco_custo, preco_venda, estoque_atual, estoque_minimo, ativo)
-             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)'''
-    db.execute(sql, (nome, codigo_barras, categoria_id, preco_custo, preco_venda, estoque_atual, estoque_minimo, ativo))
-    db.close()
+def cadastrar_produto(nome, codigo_barras, categoria_id, preco_custo, preco_venda, estoque_atual, estoque_minimo, imagem=None, ativo=1):
+    with Database() as db:
+        sql = '''INSERT INTO produto (nome, codigo_barras, categoria_id, preco_custo, preco_venda, estoque_atual, estoque_minimo, imagem, ativo)
+                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)'''
+        db.execute(sql, (nome, codigo_barras, categoria_id, preco_custo, preco_venda, estoque_atual, estoque_minimo, imagem, ativo))
 
 # Funções para categorias
 def listar_categorias():
-    db = Database()
-    categorias = db.query('SELECT * FROM categoria')
-    db.close()
-    return categorias
+    with Database() as db:
+        return db.query('SELECT * FROM categoria ORDER BY nome')
 
 def cadastrar_categoria(nome, ativo=1):
-    db = Database()
-    sql = 'INSERT INTO categoria (nome, ativo) VALUES (%s, %s)'
-    db.execute(sql, (nome, ativo))
-    db.close()
+    with Database() as db:
+        sql = 'INSERT INTO categoria (nome, ativo) VALUES (%s, %s)'
+        db.execute(sql, (nome, ativo))
 
 # Funções para usuários
 def listar_usuarios():
-    db = Database()
-    usuarios = db.query('SELECT * FROM usuario')
-    db.close()
-    return usuarios
+    with Database() as db:
+        return db.query('SELECT * FROM usuario ORDER BY nome')
+
 def cadastrar_usuario(nome, email, senha, perfil_id, ativo=1):
-    db = Database()
-    sql = 'INSERT INTO usuario (nome, email, senha, perfil_id, ativo) VALUES (%s, %s, %s, %s, %s)'
-    db.execute(sql, (nome, email, senha, perfil_id, ativo))
-    db.close()
+    with Database() as db:
+        sql = 'INSERT INTO usuario (nome, email, senha, perfil_id, ativo) VALUES (%s, %s, %s, %s, %s)'
+        db.execute(sql, (nome, email, senha, perfil_id, ativo))
 
 # Funções para vendas
 # Excluir venda por ID
@@ -162,13 +183,11 @@ def excluir_venda(venda_id):
             repor_estoque(item['produto_id'], item['quantidade'])
             cadastrar_movimentacao(item['produto_id'], 'ENTRADA', item['quantidade'], f'Exclusao da venda {venda_id}')
 
-    db = Database()
-    db.execute('DELETE FROM item_venda WHERE venda_id=%s', (venda_id,))
-    db.execute('DELETE FROM venda WHERE id=%s', (venda_id,))
-    db.close()
+    with Database() as db:
+        db.execute('DELETE FROM item_venda WHERE venda_id=%s', (venda_id,))
+        db.execute('DELETE FROM venda WHERE id=%s', (venda_id,))
 # Editar venda por ID
 def editar_venda(venda_id, cliente_id=None, usuario_id=None, caixa_id=None, total_bruto=None, desconto=None, total_liquido=None, status=None):
-    db = Database()
     campos = []
     valores = []
     if cliente_id is not None:
@@ -193,66 +212,54 @@ def editar_venda(venda_id, cliente_id=None, usuario_id=None, caixa_id=None, tota
         campos.append('status=%s')
         valores.append(status)
     if campos:
-        sql = f"UPDATE venda SET {', '.join(campos)} WHERE id=%s"
-        valores.append(venda_id)
-        db.execute(sql, tuple(valores))
-    db.close()
+        with Database() as db:
+            sql = f"UPDATE venda SET {', '.join(campos)} WHERE id=%s"
+            valores.append(venda_id)
+            db.execute(sql, tuple(valores))
+
 def listar_vendas():
-    db = Database()
-    vendas = db.query('''
-        SELECT v.*, c.nome AS cliente_nome, u.nome AS usuario_nome
-        FROM venda v
-        INNER JOIN cliente c ON v.cliente_id = c.id
-        INNER JOIN usuario u ON v.usuario_id = u.id
-    ''')
-    db.close()
-    return vendas
+    with Database() as db:
+        return db.query('''
+            SELECT v.*, c.nome AS cliente_nome, u.nome AS usuario_nome
+            FROM venda v
+            INNER JOIN cliente c ON v.cliente_id = c.id
+            INNER JOIN usuario u ON v.usuario_id = u.id
+            ORDER BY v.data_venda DESC, v.id DESC
+        ''')
 
 # Buscar venda por ID
 def get_venda(venda_id):
-    db = Database()
-    venda = db.query('SELECT * FROM venda WHERE id = %s', (venda_id,))
-    db.close()
-    return venda[0] if venda else None
+    with Database() as db:
+        return db.query_one('SELECT * FROM venda WHERE id = %s', (venda_id,))
 
 def cadastrar_venda(cliente_id, usuario_id, caixa_id, total_bruto, desconto, total_liquido, status='FINALIZADA'):
-    db = Database()
-    sql = '''INSERT INTO venda (cliente_id, usuario_id, caixa_id, total_bruto, desconto, total_liquido, status)
-             VALUES (%s, %s, %s, %s, %s, %s, %s)'''
-    db.execute(sql, (cliente_id, usuario_id, caixa_id, total_bruto, desconto, total_liquido, status))
-    venda_id = db.query('SELECT LAST_INSERT_ID() as id')[0]['id']
-    db.close()
-    return venda_id
+    with Database() as db:
+        sql = '''INSERT INTO venda (cliente_id, usuario_id, caixa_id, total_bruto, desconto, total_liquido, status)
+                 VALUES (%s, %s, %s, %s, %s, %s, %s)'''
+        return db.insert(sql, (cliente_id, usuario_id, caixa_id, total_bruto, desconto, total_liquido, status))
 
 # Funções para movimentação de estoque
 def listar_movimentacoes():
-    db = Database()
-    movs = db.query('SELECT * FROM movimentacao_estoque')
-    db.close()
-    return movs
+    with Database() as db:
+        return db.query('SELECT * FROM movimentacao_estoque ORDER BY id DESC')
 
 def cadastrar_movimentacao(produto_id, tipo, quantidade, referencia=None):
-    db = Database()
-    sql = '''INSERT INTO movimentacao_estoque (produto_id, tipo, quantidade, referencia)
-             VALUES (%s, %s, %s, %s)'''
-    db.execute(sql, (produto_id, tipo, quantidade, referencia))
-    db.close()
+    with Database() as db:
+        sql = '''INSERT INTO movimentacao_estoque (produto_id, tipo, quantidade, referencia)
+                 VALUES (%s, %s, %s, %s)'''
+        db.execute(sql, (produto_id, tipo, quantidade, referencia))
 
 # Funções para caixa
 def listar_caixas():
-    db = Database()
-    caixas = db.query('SELECT * FROM caixa')
-    db.close()
-    return caixas
+    with Database() as db:
+        return db.query('SELECT * FROM caixa ORDER BY id DESC')
 
 def abrir_caixa(usuario_id, valor_inicial):
-    db = Database()
-    sql = '''INSERT INTO caixa (usuario_id, valor_inicial, status) VALUES (%s, %s, 'ABERTO')'''
-    db.execute(sql, (usuario_id, valor_inicial))
-    db.close()
+    with Database() as db:
+        sql = '''INSERT INTO caixa (usuario_id, valor_inicial, status) VALUES (%s, %s, 'ABERTO')'''
+        db.execute(sql, (usuario_id, valor_inicial))
 
 def fechar_caixa(caixa_id, valor_final):
-    db = Database()
-    sql = '''UPDATE caixa SET valor_final=%s, data_fechamento=NOW(), status='FECHADO' WHERE id=%s'''
-    db.execute(sql, (valor_final, caixa_id))
-    db.close()
+    with Database() as db:
+        sql = '''UPDATE caixa SET valor_final=%s, data_fechamento=NOW(), status='FECHADO' WHERE id=%s'''
+        db.execute(sql, (valor_final, caixa_id))

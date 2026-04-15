@@ -31,17 +31,31 @@ pip install flask mysql-connector-python pandas reportlab openpyxl
 
 1. Crie e ative um ambiente virtual.
 2. Instale as dependencias Python.
-3. Ajuste a conexao com o banco em config.py.
+3. Ajuste as variaveis em config.py ou defina valores por ambiente.
 
 Exemplo de configuracao:
 
 ```python
 DB_CONFIG = {
     'host': 'localhost',
+    'port': 3306,
     'user': 'root',
     'password': '',
     'database': 'sistema_vendas'
 }
+
+APP_SECRET_KEY = 'troque-esta-chave-em-producao'
+
+Variaveis opcionais suportadas:
+
+- DB_HOST
+- DB_PORT
+- DB_USER
+- DB_PASSWORD
+- DB_NAME
+- DB_TIMEOUT
+- APP_SECRET_KEY
+- FLASK_DEBUG
 ```
 
 ## Como executar
@@ -66,6 +80,7 @@ python main.py
 - db.py: acesso ao banco e operacoes de negocio.
 - config.py: configuracao do banco de dados.
 - main.py: menu de linha de comando.
+- static/css/app.css: tema visual compartilhado pela interface web.
 - templates/: paginas HTML da aplicacao.
 
 ## Observacoes
@@ -73,3 +88,4 @@ python main.py
 - O repositorio nao inclui o script SQL de criacao do banco.
 - A exportacao para Excel depende do pacote openpyxl.
 - As operacoes de venda assumem que existem registros de cliente, usuario, caixa e produto no banco.
+- A interface web foi centralizada em um layout base para reduzir duplicacao entre templates.

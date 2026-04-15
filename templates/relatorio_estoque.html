@@ -1,75 +1,82 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Controle de Estoque</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .estoque-baixo {
-            background-color: #f8d7da;
-        }
+{% extends 'base.html' %}
 
-        .estoque-normal {
-            background-color: #d1e7dd;
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">Sistema de Vendas</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="/clientes">Clientes</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/produtos">Produtos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/vendas">Vendas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/vendas/cadastrar">Cadastrar Venda</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/relatorio/vendas">Relatório de Vendas</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="/controle-estoque">Controle de Estoque</a></li>
-                </ul>
-            </div>
+{% block title %}Estoque | Sistema de Vendas{% endblock %}
+{% block page_kicker %}Operação{% endblock %}
+{% block page_title %}Controle de estoque{% endblock %}
+{% block page_description %}Monitore itens em alerta, valor disponível e produtos com maior pressão de reposição no catálogo atual.{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('produtos') }}" class="btn btn-outline-light"><i class="bi bi-box-seam me-2"></i>Ver produtos</a>
+<a href="{{ url_for('produtos_cadastrar') }}" class="btn btn-brand"><i class="bi bi-plus-circle me-2"></i>Novo produto</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Itens monitorados</div>
+            <p class="metric-value">{{ produtos|length }}</p>
+            <div class="metric-footnote">Produtos considerados no mapa de estoque.</div>
         </div>
-    </nav>
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-            <div>
-                <h2 class="mb-1">Controle de Estoque</h2>
-                <p class="text-muted mb-0">Produtos em vermelho estao abaixo do estoque minimo. Produtos em verde estao com estoque normal.</p>
-            </div>
-            <div class="d-flex gap-3 flex-wrap">
-                <div class="card border-danger-subtle bg-danger-subtle">
-                    <div class="card-body py-2 px-3">
-                        <div class="small text-danger-emphasis">Abaixo do estoque</div>
-                        <div class="fs-4 fw-semibold">{{ total_abaixo }}</div>
-                    </div>
-                </div>
-                <div class="card border-success-subtle bg-success-subtle">
-                    <div class="card-body py-2 px-3">
-                        <div class="small text-success-emphasis">Estoque normal</div>
-                        <div class="fs-4 fw-semibold">{{ total_normal }}</div>
-                    </div>
-                </div>
-            </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Em alerta</div>
+            <p class="metric-value">{{ total_abaixo }}</p>
+            <div class="metric-footnote">Itens no mínimo esperado ou abaixo dele.</div>
         </div>
-        <table class="table align-middle">
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Em nível saudável</div>
+            <p class="metric-value">{{ total_normal }}</p>
+            <div class="metric-footnote">Produtos com folga acima da faixa mínima.</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Valor em estoque</div>
+            <p class="metric-value">{{ valor_em_estoque|moeda }}</p>
+            <div class="metric-footnote">Estimativa calculada pelo preço de venda atual.</div>
+        </div>
+    </div>
+</div>
+
+<div class="table-shell">
+    <div class="section-card-header">
+        <div>
+            <h2 class="section-title">Mapa de reposição</h2>
+            <p class="section-subtitle">Linhas em destaque mostram rapidamente quais itens exigem atenção imediata.</p>
+        </div>
+    </div>
+
+    {% if produtos %}
+    <div class="table-responsive">
+        <table class="table app-table align-middle">
             <thead>
                 <tr>
-                    <th>Nome</th>
-                    <th>Preco</th>
-                    <th>Estoque</th>
+                    <th>Produto</th>
+                    <th>Categoria</th>
+                    <th>Preço de venda</th>
+                    <th>Estoque atual</th>
+                    <th>Estoque mínimo</th>
+                    <th>Situação</th>
                 </tr>
             </thead>
             <tbody>
                 {% for p in produtos %}
                 <tr class="{% if p.estoque_baixo %}estoque-baixo{% else %}estoque-normal{% endif %}">
-                    <td>{{ p.nome }}</td>
-                    <td>R$ {{ '%.2f'|format(p.preco_venda or 0) }}</td>
                     <td>
-                        <div class="fw-semibold">{{ p.estoque_atual }}</div>
-                        <div class="small text-body-secondary">Minimo: {{ p.estoque_minimo }}</div>
-                        <span class="badge {% if p.estoque_baixo %}text-bg-danger{% else %}text-bg-success{% endif %}">
-                            {% if p.estoque_baixo %}Abaixo do estoque{% else %}Estoque normal{% endif %}
+                        <div class="fw-semibold">{{ p.nome }}</div>
+                        <div class="text-muted-app small">Código: {{ p.codigo_barras or 'Não informado' }}</div>
+                    </td>
+                    <td>{{ p.categoria_nome or 'Sem categoria' }}</td>
+                    <td>{{ p.preco_venda|moeda }}</td>
+                    <td>{{ p.estoque_atual }}</td>
+                    <td>{{ p.estoque_minimo }}</td>
+                    <td>
+                        <span class="badge-soft {% if p.estoque_baixo %}danger{% else %}success{% endif %}">
+                            {% if p.estoque_baixo %}Abaixo do mínimo{% else %}Estoque normal{% endif %}
                         </span>
                     </td>
                 </tr>
@@ -77,5 +84,12 @@
             </tbody>
         </table>
     </div>
-</body>
-</html>
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-box-seam"></i>
+        <h3 class="section-title mt-3 mb-2">Nenhum produto disponível</h3>
+        <p>Cadastre produtos para começar a monitorar os níveis de estoque.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

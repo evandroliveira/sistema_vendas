@@ -1,61 +1,90 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Cadastrar Produto - Sistema de Vendas</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">Sistema de Vendas</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="/clientes">Clientes</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="/produtos">Produtos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/vendas">Vendas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/vendas/cadastrar">Cadastrar Venda</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/relatorio/vendas">Relatório de Vendas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/controle-estoque">Controle de Estoque</a></li>
-                </ul>
+{% extends 'base.html' %}
+
+{% block title %}Novo Produto | Sistema de Vendas{% endblock %}
+{% block page_kicker %}Catálogo{% endblock %}
+{% block page_title %}Adicionar produto{% endblock %}
+{% block page_description %}Cadastre itens com categoria, preço e parâmetros de estoque para sustentar o controle operacional.{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('categorias') }}" class="btn btn-outline-light"><i class="bi bi-tags me-2"></i>Ver categorias</a>
+<a href="{{ url_for('produtos') }}" class="btn btn-outline-light"><i class="bi bi-arrow-left me-2"></i>Voltar</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="section-card">
+            <div class="section-card-header">
+                <div>
+                    <h2 class="section-title">Dados do produto</h2>
+                    <p class="section-subtitle">Use categorias existentes e defina parâmetros claros de preço e reposição.</p>
+                </div>
             </div>
+
+            {% if erro %}
+            <div class="alert alert-warning app-alert mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>{{ erro }}</span>
+            </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" class="row g-3">
+                <div class="col-md-6">
+                    <label for="nome" class="form-label">Nome</label>
+                    <input type="text" class="form-control" id="nome" name="nome" value="{{ request.form.get('nome', '') }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="codigo_barras" class="form-label">Código de barras</label>
+                    <input type="text" class="form-control" id="codigo_barras" name="codigo_barras" value="{{ request.form.get('codigo_barras', '') }}">
+                </div>
+                <div class="col-md-6">
+                    <label for="categoria_id" class="form-label">Categoria</label>
+                    <select class="form-select" id="categoria_id" name="categoria_id" required {% if not categorias %}disabled{% endif %}>
+                        <option value="">Selecione uma categoria</option>
+                        {% for categoria in categorias %}
+                        <option value="{{ categoria.id }}" {% if request.form.get('categoria_id') == categoria.id|string %}selected{% endif %}>{{ categoria.nome }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">As categorias são carregadas do banco atual.</div>
+                </div>
+                <div class="col-md-3">
+                    <label for="preco_custo" class="form-label">Preço de custo</label>
+                    <input type="number" step="0.01" class="form-control" id="preco_custo" name="preco_custo" value="{{ request.form.get('preco_custo', '') }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="preco_venda" class="form-label">Preço de venda</label>
+                    <input type="number" step="0.01" class="form-control" id="preco_venda" name="preco_venda" value="{{ request.form.get('preco_venda', '') }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="estoque_atual" class="form-label">Estoque atual</label>
+                    <input type="number" class="form-control" id="estoque_atual" name="estoque_atual" value="{{ request.form.get('estoque_atual', '') }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="estoque_minimo" class="form-label">Estoque mínimo</label>
+                    <input type="number" class="form-control" id="estoque_minimo" name="estoque_minimo" value="{{ request.form.get('estoque_minimo', '') }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="imagem" class="form-label">Imagem do produto</label>
+                    <input type="file" class="form-control" id="imagem" name="imagem" accept="image/*">
+                    <div class="form-text">Selecione uma imagem para o produto (opcional).</div>
+                </div>
+                <div class="col-12 d-flex gap-3 flex-wrap pt-2">
+                    <button type="submit" class="btn btn-brand" {% if not categorias %}disabled{% endif %}>Salvar produto</button>
+                    <a href="{{ url_for('produtos') }}" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
         </div>
-    </nav>
-    <div class="container mt-4">
-        <h2>Cadastrar Produto</h2>
-        <form method="post">
-            <div class="mb-3">
-                <label for="nome" class="form-label">Nome</label>
-                <input type="text" class="form-control" id="nome" name="nome" required>
-            </div>
-            <div class="mb-3">
-                <label for="codigo_barras" class="form-label">Código de Barras</label>
-                <input type="text" class="form-control" id="codigo_barras" name="codigo_barras">
-            </div>
-            <div class="mb-3">
-                <label for="categoria_id" class="form-label">ID da Categoria</label>
-                <input type="number" class="form-control" id="categoria_id" name="categoria_id" required>
-            </div>
-            <div class="mb-3">
-                <label for="preco_custo" class="form-label">Preço de Custo</label>
-                <input type="number" step="0.01" class="form-control" id="preco_custo" name="preco_custo" required>
-            </div>
-            <div class="mb-3">
-                <label for="preco_venda" class="form-label">Preço de Venda</label>
-                <input type="number" step="0.01" class="form-control" id="preco_venda" name="preco_venda" required>
-            </div>
-            <div class="mb-3">
-                <label for="estoque_atual" class="form-label">Estoque Atual</label>
-                <input type="number" class="form-control" id="estoque_atual" name="estoque_atual" required>
-            </div>
-            <div class="mb-3">
-                <label for="estoque_minimo" class="form-label">Estoque Mínimo</label>
-                <input type="number" class="form-control" id="estoque_minimo" name="estoque_minimo" required>
-            </div>
-            <button type="submit" class="btn btn-success">Salvar</button>
-            <a href="/produtos" class="btn btn-secondary">Voltar</a>
-        </form>
     </div>
-</body>
-</html>
+
+    <div class="col-lg-4">
+        <div class="note-card h-100">
+            <h2 class="section-title mb-3">Checklist rápido</h2>
+            <ul>
+                <li>Use um estoque mínimo coerente com o giro do item.</li>
+                <li>Prefira preencher código de barras para agilizar futuras integrações.</li>
+                <li>Se não houver categorias, revise a base antes de continuar.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

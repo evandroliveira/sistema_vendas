@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Sistema de Vendas{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+    {% block head %}{% endblock %}
+</head>
+<body class="app-body">
+    <div class="app-backdrop"></div>
+
+    <nav class="navbar navbar-expand-lg app-navbar">
+        <div class="container app-shell">
+            <a class="navbar-brand brand-mark" href="{{ url_for('index') }}">
+                <span class="brand-icon"><i class="bi bi-graph-up-arrow"></i></span>
+                <span>
+                    <small>Painel comercial</small>
+                    <strong>Sistema de Vendas</strong>
+                </span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal" aria-controls="menuPrincipal" aria-expanded="false" aria-label="Alternar navegação">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="menuPrincipal">
+                <ul class="navbar-nav ms-auto gap-lg-2">
+                    <li class="nav-item"><a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{{ url_for('index') }}">Resumo</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path.startswith('/clientes') %}active{% endif %}" href="{{ url_for('clientes') }}">Clientes</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path.startswith('/categorias') %}active{% endif %}" href="{{ url_for('categorias') }}">Categorias</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path.startswith('/produtos') %}active{% endif %}" href="{{ url_for('produtos') }}">Produtos</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path.startswith('/vendas') %}active{% endif %}" href="{{ url_for('vendas') }}">Vendas</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path.startswith('/relatorio/vendas') %}active{% endif %}" href="{{ url_for('relatorio_vendas') }}">Relatórios</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path.startswith('/controle-estoque') or request.path.startswith('/relatorio/estoque') %}active{% endif %}" href="{{ url_for('controle_estoque') }}">Estoque</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container app-shell py-4 py-lg-5">
+        <section class="hero-panel mb-4">
+            <div>
+                <p class="section-kicker mb-2">{% block page_kicker %}Operação{% endblock %}</p>
+                <h1 class="hero-title mb-3">{% block page_title %}Sistema de Vendas{% endblock %}</h1>
+                <p class="hero-description mb-0">{% block page_description %}Acompanhe clientes, produtos, vendas e estoque em um painel único.{% endblock %}</p>
+            </div>
+            <div class="hero-actions">
+                {% block page_actions %}{% endblock %}
+            </div>
+        </section>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alerts-stack mb-4">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} app-alert mb-0" role="alert">
+                            <i class="bi {% if category == 'success' %}bi-check-circle-fill{% elif category == 'warning' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %}"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="container app-shell pb-5">
+        <div class="footer-note">Sistema web em Flask com foco em operação comercial, relatórios e controle de estoque.</div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

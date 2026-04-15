@@ -1,112 +1,183 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Editar Venda - Sistema de Vendas</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">Sistema de Vendas</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="/clientes">Clientes</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/produtos">Produtos</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="/vendas">Vendas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/controle-estoque">Controle de Estoque</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    <div class="container mt-4">
-        <h2>Editar Venda</h2>
-        {% if erro %}
-        <div class="alert alert-danger" role="alert">
-            {{ erro }}
-        </div>
-        {% endif %}
+{% extends 'base.html' %}
 
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Itens da venda</h5>
-                {% if itens_venda %}
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Produto</th>
-                                <th>Quantidade</th>
-                                <th>Preco unitario</th>
-                                <th>Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in itens_venda %}
-                            <tr>
-                                <td>{{ item.produto_nome }}</td>
-                                <td>{{ item.quantidade }}</td>
-                                <td>R$ {{ '%.2f'|format(item.preco_unitario or 0) }}</td>
-                                <td>R$ {{ '%.2f'|format((item.quantidade or 0) * (item.preco_unitario or 0)) }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <p class="text-muted mb-0">Nenhum item vinculado a esta venda.</p>
-                {% endif %}
-            </div>
-        </div>
+{% block title %}Editar Venda | Sistema de Vendas{% endblock %}
+{% block page_kicker %}Comercial{% endblock %}
+{% block page_title %}Atualizar venda{% endblock %}
+{% block page_description %}Revise responsável, caixa, desconto e status sem perder visibilidade dos itens vinculados à operação.{% endblock %}
 
-        <form method="post">
-            <div class="mb-3">
-                <label for="cliente_id" class="form-label">Cliente</label>
-                <select class="form-control" id="cliente_id" name="cliente_id" required>
-                    {% for c in clientes %}
-                    <option value="{{ c.id }}" {% if c.id == venda.cliente_id %}selected{% endif %}>{{ c.nome }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="usuario_id" class="form-label">Usuário</label>
-                <select class="form-control" id="usuario_id" name="usuario_id" required>
-                    {% for u in usuarios %}
-                    <option value="{{ u.id }}" {% if u.id == venda.usuario_id %}selected{% endif %}>{{ u.nome }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="caixa_id" class="form-label">Caixa</label>
-                <select class="form-control" id="caixa_id" name="caixa_id" required>
-                    {% for cx in caixas %}
-                    <option value="{{ cx.id }}" {% if cx.id == venda.caixa_id %}selected{% endif %}>Caixa {{ cx.id }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="total_bruto" class="form-label">Total Bruto</label>
-                <input type="number" step="0.01" class="form-control" id="total_bruto" name="total_bruto" value="{{ venda.total_bruto }}" required>
-            </div>
-            <div class="mb-3">
-                <label for="desconto" class="form-label">Desconto</label>
-                <input type="number" step="0.01" class="form-control" id="desconto" name="desconto" value="{{ venda.desconto }}">
-            </div>
-            <div class="mb-3">
-                <label for="total_liquido" class="form-label">Total Líquido</label>
-                <input type="number" step="0.01" class="form-control" id="total_liquido" name="total_liquido" value="{{ venda.total_liquido }}" required>
-            </div>
-            <div class="mb-3">
-                <label for="status" class="form-label">Status</label>
-                <select class="form-control" id="status" name="status">
-                    <option value="FINALIZADA" {% if venda.status == 'FINALIZADA' %}selected{% endif %}>FINALIZADA</option>
-                    <option value="CANCELADA" {% if venda.status == 'CANCELADA' %}selected{% endif %}>CANCELADA</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-success">Salvar</button>
-            <a href="/vendas" class="btn btn-secondary">Voltar</a>
-        </form>
+{% set cliente_atual = request.form.get('cliente_id', venda.cliente_id|string) %}
+{% set usuario_atual = request.form.get('usuario_id', venda.usuario_id|string) %}
+{% set caixa_atual = request.form.get('caixa_id', venda.caixa_id|string if venda.caixa_id else '') %}
+{% set status_atual = request.form.get('status', venda.status) %}
+{% set total_bruto_atual = request.form.get('total_bruto', venda.total_bruto_calculado if venda.total_bruto_calculado is defined else venda.total_bruto) %}
+{% set total_liquido_atual = request.form.get('total_liquido', venda.total_liquido_calculado if venda.total_liquido_calculado is defined else venda.total_liquido) %}
+
+{% block page_actions %}
+<a href="{{ url_for('vendas') }}" class="btn btn-outline-light"><i class="bi bi-arrow-left me-2"></i>Voltar</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Venda</div>
+            <p class="metric-value">#{{ venda.id }}</p>
+            <div class="metric-footnote">Registro atualmente com status {{ venda.status }}.</div>
+        </div>
     </div>
-</body>
-</html>
+    <div class="col-md-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Itens vinculados</div>
+            <p class="metric-value">{{ itens_venda|length }}</p>
+            <div class="metric-footnote">Produtos já associados a esta venda.</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Total bruto</div>
+            <p class="metric-value">{{ (venda.total_bruto_calculado if venda.total_bruto_calculado is defined else venda.total_bruto)|moeda }}</p>
+            <div class="metric-footnote">Valor calculado com base nos itens atuais.</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Total líquido</div>
+            <p class="metric-value">{{ (venda.total_liquido_calculado if venda.total_liquido_calculado is defined else venda.total_liquido)|moeda }}</p>
+            <div class="metric-footnote">Resultado após aplicar o desconto informado.</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="section-card">
+            <div class="section-card-header">
+                <div>
+                    <h2 class="section-title">Dados editáveis</h2>
+                    <p class="section-subtitle">Ajuste os responsáveis pela venda e revise o desconto antes de salvar.</p>
+                </div>
+            </div>
+
+            {% if erro %}
+            <div class="alert alert-warning app-alert mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>{{ erro }}</span>
+            </div>
+            {% endif %}
+
+            <form method="post" class="row g-3">
+                <div class="col-md-6">
+                    <label for="cliente_id" class="form-label">Cliente</label>
+                    <select class="form-select" id="cliente_id" name="cliente_id" required>
+                        {% for c in clientes %}
+                        <option value="{{ c.id }}" {% if cliente_atual == c.id|string %}selected{% endif %}>{{ c.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="usuario_id" class="form-label">Responsável</label>
+                    <select class="form-select" id="usuario_id" name="usuario_id" required>
+                        {% for u in usuarios %}
+                        <option value="{{ u.id }}" {% if usuario_atual == u.id|string %}selected{% endif %}>{{ u.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="caixa_id" class="form-label">Caixa</label>
+                    <select class="form-select" id="caixa_id" name="caixa_id" required>
+                        {% for cx in caixas %}
+                        <option value="{{ cx.id }}" {% if caixa_atual == cx.id|string %}selected{% endif %}>Caixa {{ cx.id }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="FINALIZADA" {% if status_atual == 'FINALIZADA' %}selected{% endif %}>Finalizada</option>
+                        <option value="CANCELADA" {% if status_atual == 'CANCELADA' %}selected{% endif %}>Cancelada</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="total_bruto" class="form-label">Total bruto</label>
+                    <input type="number" step="0.01" class="form-control" id="total_bruto" name="total_bruto" value="{{ total_bruto_atual }}" readonly required>
+                </div>
+                <div class="col-md-4">
+                    <label for="desconto" class="form-label">Desconto</label>
+                    <input type="number" step="0.01" class="form-control" id="desconto" name="desconto" value="{{ request.form.get('desconto', venda.desconto) }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="total_liquido" class="form-label">Total líquido</label>
+                    <input type="number" step="0.01" class="form-control" id="total_liquido" name="total_liquido" value="{{ total_liquido_atual }}" readonly required>
+                </div>
+                <div class="col-12 d-flex gap-3 flex-wrap pt-2">
+                    <button type="submit" class="btn btn-brand">Salvar alterações</button>
+                    <a href="{{ url_for('vendas') }}" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="table-shell h-100">
+            <div class="section-card-header">
+                <div>
+                    <h2 class="section-title">Itens da venda</h2>
+                    <p class="section-subtitle">Os itens permanecem vinculados a esta venda e determinam o total bruto calculado.</p>
+                </div>
+            </div>
+
+            {% if itens_venda %}
+            <div class="table-responsive">
+                <table class="table app-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Quantidade</th>
+                            <th>Preço unitário</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in itens_venda %}
+                        <tr>
+                            <td>{{ item.produto_nome }}</td>
+                            <td>{{ item.quantidade }}</td>
+                            <td>{{ item.preco_unitario|moeda }}</td>
+                            <td>{{ ((item.quantidade or 0) * (item.preco_unitario or 0))|moeda }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="bi bi-cart-x"></i>
+                <h3 class="section-title mt-3 mb-2">Venda sem itens</h3>
+                <p>Não há itens associados a este registro no momento.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const totalBrutoInput = document.getElementById('total_bruto');
+    const descontoInput = document.getElementById('desconto');
+    const totalLiquidoInput = document.getElementById('total_liquido');
+
+    function recalcularTotalLiquido() {
+        const totalBruto = parseFloat(totalBrutoInput.value) || 0;
+        const desconto = parseFloat(descontoInput.value) || 0;
+        totalLiquidoInput.value = Math.max(totalBruto - desconto, 0).toFixed(2);
+    }
+
+    if (descontoInput) {
+        descontoInput.addEventListener('input', recalcularTotalLiquido);
+        recalcularTotalLiquido();
+    }
+});
+</script>
+{% endblock %}

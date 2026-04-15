@@ -1,59 +1,98 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vendas - Sistema de Vendas</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">Sistema de Vendas</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="/clientes">Clientes</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/produtos">Produtos</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="/vendas">Vendas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/vendas/cadastrar">Cadastrar Venda</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/relatorio/vendas">Relatório de Vendas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/controle-estoque">Controle de Estoque</a></li>
-                </ul>
-            </div>
+{% extends 'base.html' %}
+
+{% block title %}Vendas | Sistema de Vendas{% endblock %}
+{% block page_kicker %}Comercial{% endblock %}
+{% block page_title %}Gestão de vendas{% endblock %}
+{% block page_description %}Acompanhe o histórico da operação, revise status e acesse edições rapidamente em uma única tela.{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('relatorio_vendas') }}" class="btn btn-outline-light"><i class="bi bi-bar-chart-line me-2"></i>Relatório</a>
+<a href="{{ url_for('vendas_cadastrar') }}" class="btn btn-brand"><i class="bi bi-plus-circle me-2"></i>Nova venda</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Vendas registradas</div>
+            <p class="metric-value">{{ resumo.quantidade }}</p>
+            <div class="metric-footnote">Movimentações presentes no histórico atual.</div>
         </div>
-    </nav>
-    <div class="container mt-4">
-        <h2>Vendas</h2>
-        <a href="/vendas/cadastrar" class="btn btn-primary mb-3">Cadastrar Venda</a>
-        <table class="table table-striped">
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Finalizadas</div>
+            <p class="metric-value">{{ resumo.finalizadas }}</p>
+            <div class="metric-footnote">Operações confirmadas com faturamento efetivo.</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Canceladas</div>
+            <p class="metric-value">{{ resumo.canceladas }}</p>
+            <div class="metric-footnote">Registros cancelados no período acumulado.</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Ticket médio</div>
+            <p class="metric-value">{{ resumo.ticket_medio|moeda }}</p>
+            <div class="metric-footnote">Faturamento confirmado de {{ resumo.faturamento_total|moeda }}.</div>
+        </div>
+    </div>
+</div>
+
+<div class="table-shell">
+    <div class="section-card-header">
+        <div>
+            <h2 class="section-title">Lista de vendas</h2>
+            <p class="section-subtitle">Consulte cliente, responsável, caixa e status sem sair do fluxo operacional.</p>
+        </div>
+    </div>
+
+    {% if vendas %}
+    <div class="table-responsive">
+        <table class="table app-table align-middle">
             <thead>
                 <tr>
                     <th>ID</th>
+                    <th>Data</th>
                     <th>Cliente</th>
-                    <th>Usuário</th>
+                    <th>Responsável</th>
                     <th>Caixa</th>
-                    <th>Total Líquido</th>
+                    <th>Total líquido</th>
                     <th>Status</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
                 {% for v in vendas %}
-                <tr>
-                    <td>{{ v.id }}</td>
+                {% set status_classe = 'success' if v.status == 'FINALIZADA' else 'danger' if v.status == 'CANCELADA' else 'warning' %}
+                <tr class="{% if v.status == 'FINALIZADA' %}status-row-finalizada{% elif v.status == 'CANCELADA' %}status-row-cancelada{% endif %}">
+                    <td>#{{ v.id }}</td>
+                    <td>{{ v.data_venda or 'Sem data' }}</td>
                     <td>{{ v.cliente_nome }}</td>
                     <td>{{ v.usuario_nome }}</td>
-                    <td>{{ v.caixa_id }}</td>
-                    <td>{{ v.total_liquido }}</td>
-                    <td>{{ v.status }}</td>
+                    <td>{% if v.caixa_id %}Caixa #{{ v.caixa_id }}{% else %}Não vinculado{% endif %}</td>
+                    <td>{{ v.total_liquido|moeda }}</td>
+                    <td><span class="badge-soft {{ status_classe }}">{{ v.status }}</span></td>
                     <td>
-                        <a href="/vendas/editar/{{ v.id }}" class="btn btn-sm btn-warning">Editar</a>
-                        <a href="/vendas/excluir/{{ v.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Deseja realmente excluir esta venda?');">Excluir</a>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="{{ url_for('vendas_editar', id=v.id) }}" class="btn btn-sm btn-outline-light">Editar</a>
+                            <a href="{{ url_for('vendas_excluir', id=v.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Deseja realmente excluir esta venda?');">Excluir</a>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-</body>
-</html>
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-receipt"></i>
+        <h3 class="section-title mt-3 mb-2">Nenhuma venda registrada</h3>
+        <p>Cadastre a primeira venda para começar a alimentar o histórico comercial.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
